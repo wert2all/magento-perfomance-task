@@ -6,6 +6,10 @@
   "files": {
     "magento_archive": "/home/wert2all/Downloads/magento-1.9.2.4.tar.gz"
   },
+  "url": {
+    "default": "http://mage.loc/perf/",
+    "secure": ""
+  },
   "mysql": {
     "host": "localhost",
     "name": "magento_perf",

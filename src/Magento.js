@@ -8,10 +8,51 @@ exports.Magento = function () {
     }
 
     return {
-        install: function (Config) {
-            task.start("Installing Magento into " + Config.getMagentoInstanceDirectory());
+        install: function (config, callback) {
+            var installDirectory = _getInstallerDirectory(config);
+            task.start("Installing Magento into " + config.getMagentoInstanceDirectory());
+            var php = spawn(
+                'php',
+                ['-f', installDirectory + "standalone-installer.php"],
+                {
+                    cwd: installDirectory
+                }
+            );
 
-            task.end();
+            php.stdout.on('data', function (data) {
+                console.log('stdout:' + data);
+            });
+
+            php.stderr.on('data', function (err) {
+                throw err;
+            });
+
+            php.on('close', function () {
+                task.end(callback)
+            });
+        },
+        reCreateDataBase: function (config, callback) {
+            var mysqlConfig = config.getMysql();
+
+            task.start("Drop Magento database " + mysqlConfig.getHost());
+            var mysql = spawn('mysql', [
+                "-u" + mysqlConfig.getUser(),
+                "-p" + mysqlConfig.getPassword(),
+                "-h" + mysqlConfig.getHost(),
+                "-e drop database if exists " + mysqlConfig.getName() + ";"
+            ]);
+
+            mysql.stdout.on('data', function (data) {
+                console.log('stdout:' + data);
+            });
+
+            mysql.stderr.on('data', function (err) {
+                throw err;
+            });
+
+            mysql.on('close', function () {
+                task.end(callback)
+            });
         },
         prepareInstall: function (config, callback) {
             task.start("Pre-Install Magento");
@@ -57,10 +98,10 @@ exports.Magento = function () {
                                 to: config.getMysql().getPassword()
                             }, {
                                 from: "{{url}}",
-                                to: ""
+                                to: config.getMagentoDefaultURL()
                             }, {
                                 from: "{{secure_url}}",
-                                to: ""
+                                to: config.getMagentoSecuretURL()
                             }
                         ]).forEach(function (item) {
                             content = content.replace(item.from, item.to);
@@ -77,26 +118,7 @@ exports.Magento = function () {
                 installDirectory,
                 function () {
                     _replaceInstallScript(config, installDirectory, function () {
-                        // task.end(callback);
-                        var php = spawn(
-                            'php',
-                            ['-f', installDirectory + "standalone-installer.php"],
-                            {
-                                cwd: installDirectory
-                            }
-                        );
-
-                        php.stdout.on('data', function (data) {
-                            console.log('stdout:' + data);
-                        });
-
-                        php.stderr.on('data', function (err) {
-                            throw err;
-                        });
-
-                        php.on('close', function () {
-                            task.end(callback)
-                        });
+                        task.end(callback);
                     })
                 }
             );

@@ -19,6 +19,12 @@ exports.Config = function (path) {
         getMagentoArchive: function () {
             return buildConfig.files.magento_archive
         },
+        getMagentoDefaultURL: function () {
+            return buildConfig.url.default
+        },
+        getMagentoSecuretURL: function () {
+            return buildConfig.url.secure
+        },
         getMysql: function () {
 
             return (function () {
