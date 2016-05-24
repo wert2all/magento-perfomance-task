@@ -16,6 +16,9 @@ exports.Config = function (path) {
         getMagentoRepository: function () {
             return buildConfig.directory.magento
         },
+        getMagentoArchive: function () {
+            return buildConfig.files.magento_archive
+        },
         getMysql: function () {
 
             return (function () {

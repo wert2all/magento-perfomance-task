@@ -3,6 +3,9 @@
     "build": "/home/wert2all/tmp",
     "magento": "/home/wert2all/Sync/work/code/php/magento1"
   },
+  "files": {
+    "magento_archive": "/home/wert2all/Downloads/magento-1.9.2.4.tar.gz"
+  },
   "mysql": {
     "host": "localhost",
     "name": "magento_perf",

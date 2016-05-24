@@ -1,34 +1,48 @@
 exports.Build = function () {
     var fs = require("fs"),
-        ncp = require('ncp').ncp;
+        ncp = require('ncp').ncp,
+        tar = require('tar-fs'),
+        zip = require("gunzip-maybe"),
+        task = require("./Task").Task();
 
-    ncp.limit = 16;
+    ncp.limit = 32;
 
     return {
         clean: function (directory, callback) {
-            process.stdout.write("Cleaning " + directory + "... ");
+            task.start("Cleaning " + directory);
             // console.log();
             require("rimraf")(directory, function (err) {
                 if (err) {
                     throw err;
                 }
                 fs.mkdir(directory);
-                console.log("done!");
-                if (callback && typeof callback) {
-                    callback();
-                }
+                task.end(callback);
             });
 
         },
-        mkdir: function (directory) {
-
-        },
         copy: function (from, to, callback) {
-            process.stdout.write("Copy " + from + " to " + to + " ... ");
+            task.start("Copy " + from + " to " + to);
             ncp(from, to, function () {
-                console.log("done!");
-                if (typeof  callback == "function") {
-                    callback();
+                task.end(callback);
+            });
+        },
+        mkdir: function (directory) {
+            fs.mkdir(directory);
+        },
+        unZipTar: function (archive, to, callback) {
+            task.start("Unpacking " + archive + " to " + to);
+            fs.stat(archive, function (err) {
+                if (err == null) {
+                    var extract = tar.extract(to);
+                    fs.createReadStream(archive)
+                        .pipe(zip())
+                        .pipe(extract);
+
+                    extract.on('finish', function () {
+                        task.end(callback);
+                    });
+                } else {
+                    throw  "File does not exist"
                 }
             });
         }

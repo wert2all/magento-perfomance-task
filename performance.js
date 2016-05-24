@@ -4,8 +4,9 @@ var config = require("./src/Config").Config("./../config.json"),
 
 
 build.clean(config.getBuildDirectory(), function () {
-    build.copy(config.getMagentoRepository(), config.getMagentoInstanceDirectory(),
-        function (err) {
+    build.unZipTar(config.getMagentoArchive(), config.getBuildDirectory(), function () {
+        magento.prepareInstall(config, function () {
             magento.install(config);
-        })
+        });
+    });
 });
