@@ -1,7 +1,7 @@
 exports.Magento = function () {
 
     var task = require("./Task").Task(),
-        spawn = require('child_process').spawn;
+        build = require("./Build").Build();
 
     function _getInstallerDirectory(config) {
         return config.getMagentoInstanceDirectory() + "/dev/tests/functional/config/";
@@ -11,48 +11,50 @@ exports.Magento = function () {
         install: function (config, callback) {
             var installDirectory = _getInstallerDirectory(config);
             task.start("Installing Magento into " + config.getMagentoInstanceDirectory());
-            var php = spawn(
+
+            build.exec(
                 'php',
                 ['-f', installDirectory + "standalone-installer.php"],
+                function () {
+                    task.end(callback)
+                },
                 {
-                    cwd: installDirectory
+                    onError: function (err) {
+                        throw err;
+                    },
+                    onOut: function (data) {
+                        console.log('stdout:' + data);
+                    },
+                    execOption: {
+                        cwd: installDirectory
+                    }
                 }
             );
-
-            php.stdout.on('data', function (data) {
-                console.log('stdout:' + data);
-            });
-
-            php.stderr.on('data', function (err) {
-                throw err;
-            });
-
-            php.on('close', function () {
-                task.end(callback)
-            });
         },
         reCreateDataBase: function (config, callback) {
             var mysqlConfig = config.getMysql();
 
             task.start("Drop Magento database " + mysqlConfig.getHost());
-            var mysql = spawn('mysql', [
-                "-u" + mysqlConfig.getUser(),
-                "-p" + mysqlConfig.getPassword(),
-                "-h" + mysqlConfig.getHost(),
-                "-e drop database if exists " + mysqlConfig.getName() + ";"
-            ]);
-
-            mysql.stdout.on('data', function (data) {
-                console.log('stdout:' + data);
-            });
-
-            mysql.stderr.on('data', function (err) {
-                throw err;
-            });
-
-            mysql.on('close', function () {
-                task.end(callback)
-            });
+            build.exec(
+                "mysql",
+                [
+                    "-u" + mysqlConfig.getUser(),
+                    "-p" + mysqlConfig.getPassword(),
+                    "-h" + mysqlConfig.getHost(),
+                    "-e drop database if exists " + mysqlConfig.getName() + ";"
+                ],
+                function () {
+                    task.end(callback)
+                },
+                {
+                    onOut: function (data) {
+                        console.log('stdout:' + data);
+                    },
+                    onError: function (err) {
+                        throw err;
+                    }
+                }
+            );
         },
         prepareInstall: function (config, callback) {
             task.start("Pre-Install Magento");
@@ -101,7 +103,7 @@ exports.Magento = function () {
                                 to: config.getMagentoDefaultURL()
                             }, {
                                 from: "{{secure_url}}",
-                                to: config.getMagentoSecuretURL()
+                                to: config.getMagentoSecureURL()
                             }
                         ]).forEach(function (item) {
                             content = content.replace(item.from, item.to);

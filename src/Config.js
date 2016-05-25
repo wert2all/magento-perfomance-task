@@ -22,8 +22,11 @@ exports.Config = function (path) {
         getMagentoDefaultURL: function () {
             return buildConfig.url.default
         },
-        getMagentoSecuretURL: function () {
+        getMagentoSecureURL: function () {
             return buildConfig.url.secure
+        },
+        getPerformanceDirectory: function () {
+            return buildConfig.directory.performance;
         },
         getMysql: function () {
 
@@ -44,6 +47,17 @@ exports.Config = function (path) {
                     }
                 }
             })();
+        },
+        getPerformance: function () {
+            var performance = buildConfig.performance;
+            return {
+                getVersion: function () {
+                    return performance.version;
+                },
+                getProfile: function () {
+                    return performance.profile;
+                }
+            }
         }
     }
 };

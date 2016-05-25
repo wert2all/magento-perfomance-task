@@ -1,6 +1,7 @@
 var config = require("./src/Config").Config("./../config.json"),
     build = require("./src/Build").Build(),
     magento = require("./src/Magento").Magento(),
+    performance = require("./src/Performance").Performance(config),
     async = require("async");
 
 
@@ -20,7 +21,11 @@ async.parallel([
     ],
     function () {
         magento.prepareInstall(config, function () {
-            magento.install(config);
+            magento.install(config, function () {
+                performance.init(config.getPerformance().getProfile(), function () {
+                    
+                });
+            });
         });
     }
 );

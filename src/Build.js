@@ -45,6 +45,30 @@ exports.Build = function () {
                     throw  "File does not exist"
                 }
             });
+        },
+        exec: function (command, args, callback, options) {
+            var spawn = require('child_process').spawn,
+                _opt = {
+                    onOut: function (data) {
+                    },
+                    onError: function (err) {
+                    },
+                    execOption: {}
+                };
+
+            if (typeof options.onOut == "function") {
+                _opt.onOut = options.onOut;
+            }
+            if (typeof options.onError == "function") {
+                _opt.onError = options.onError;
+            }
+            if (typeof options.execOption != "undefined") {
+                _opt.execOption = options.execOption;
+            }
+            var exec = spawn(command, args, _opt.execOption);
+            exec.stdout.on('data', _opt.onOut);
+            exec.stderr.on('data', _opt.onError);
+            exec.on('close', callback);
         }
     }
 };
