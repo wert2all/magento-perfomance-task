@@ -7,13 +7,17 @@ exports.Build = function () {
 
     ncp.limit = 32;
 
+    function defaultError(err) {
+        throw err;
+    }
+
     return {
         clean: function (directory, callback) {
             task.start("Cleaning " + directory);
             // console.log();
             require("rimraf")(directory, function (err) {
                 if (err) {
-                    throw err;
+                    defaultError(err);
                 }
                 fs.mkdir(directory);
                 task.end(callback);
@@ -46,29 +50,43 @@ exports.Build = function () {
                 }
             });
         },
-        exec: function (command, args, callback, options) {
-            var spawn = require('child_process').spawn,
-                _opt = {
+        exec: function (command) {
+            var _opt = {
                     onOut: function (data) {
+                        console.log('stdout:' + data);
                     },
-                    onError: function (err) {
-                    },
+                    onError: defaultError,
                     execOption: {}
-                };
-
-            if (typeof options.onOut == "function") {
-                _opt.onOut = options.onOut;
+                },
+                args = [];
+            return {
+                build: function (callback) {
+                    return {
+                        run: function () {
+                            var exec = require('child_process').spawn(command, args, _opt.execOption);
+                            exec.stdout.on('data', _opt.onOut);
+                            exec.stderr.on('data', _opt.onError);
+                            exec.on('close', callback);
+                        }
+                    }
+                },
+                setExecOptions: function (options) {
+                    _opt.execOption = options;
+                    return this;
+                },
+                setOnOut: function (func) {
+                    _opt.onOut = func;
+                    return this;
+                },
+                setOnError: function (func) {
+                    _opt.onError = func;
+                    return this;
+                },
+                setArguments: function (arguments) {
+                    args = arguments;
+                    return this;
+                }
             }
-            if (typeof options.onError == "function") {
-                _opt.onError = options.onError;
-            }
-            if (typeof options.execOption != "undefined") {
-                _opt.execOption = options.execOption;
-            }
-            var exec = spawn(command, args, _opt.execOption);
-            exec.stdout.on('data', _opt.onOut);
-            exec.stderr.on('data', _opt.onError);
-            exec.on('close', callback);
         }
     }
 };

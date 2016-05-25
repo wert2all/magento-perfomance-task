@@ -12,49 +12,30 @@ exports.Magento = function () {
             var installDirectory = _getInstallerDirectory(config);
             task.start("Installing Magento into " + config.getMagentoInstanceDirectory());
 
-            build.exec(
-                'php',
-                ['-f', installDirectory + "standalone-installer.php"],
-                function () {
+            build.exec('php')
+                .setArguments(['-f', installDirectory + "standalone-installer.php"])
+                .setExecOptions({
+                    cwd: installDirectory
+                })
+                .build(function () {
                     task.end(callback)
-                },
-                {
-                    onError: function (err) {
-                        throw err;
-                    },
-                    onOut: function (data) {
-                        console.log('stdout:' + data);
-                    },
-                    execOption: {
-                        cwd: installDirectory
-                    }
-                }
-            );
+                })
+                .run();
         },
         reCreateDataBase: function (config, callback) {
             var mysqlConfig = config.getMysql();
-
             task.start("Drop Magento database " + mysqlConfig.getHost());
-            build.exec(
-                "mysql",
-                [
+            build.exec('mysql')
+                .setArguments([
                     "-u" + mysqlConfig.getUser(),
                     "-p" + mysqlConfig.getPassword(),
                     "-h" + mysqlConfig.getHost(),
                     "-e drop database if exists " + mysqlConfig.getName() + ";"
-                ],
-                function () {
+                ])
+                .build(function () {
                     task.end(callback)
-                },
-                {
-                    onOut: function (data) {
-                        console.log('stdout:' + data);
-                    },
-                    onError: function (err) {
-                        throw err;
-                    }
-                }
-            );
+                })
+                .run();
         },
         prepareInstall: function (config, callback) {
             task.start("Pre-Install Magento");

@@ -11,8 +11,15 @@ exports.Performance = function (config) {
                 config.getPerformanceDirectory() + config.getPerformance().getVersion(),
                 localDirectory,
                 function () {
-                    console.log(profile);
-                    task.end()
+                    build.exec('php')
+                        .setArguments(['-f', localDirectory + "generate.php", "--", "--profile=profiles/" + config.getPerformance().getProfile() + ".xml"])
+                        .setExecOptions({
+                            cwd: localDirectory
+                        })
+                        .build(function () {
+                            task.end(callback)
+                        })
+                        .run();
                 }
             );
         }
