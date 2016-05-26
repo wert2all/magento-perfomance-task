@@ -17,6 +17,7 @@ exports.Performance = function (config) {
                             cwd: localDirectory
                         })
                         .build(function () {
+                            build.mkdir(config.getMagentoInstanceDirectory() + "report/");
                             task.end(callback)
                         })
                         .run();

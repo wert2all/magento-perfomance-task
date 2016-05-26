@@ -20,7 +20,13 @@ exports.Config = function (path) {
             return buildConfig.files.magento_archive
         },
         getMagentoDefaultURL: function () {
-            return buildConfig.url.default
+            return "http://" + this.getMagentoUrlBase() + this.getMagentoUrlBase();
+        },
+        getMagentoUrlHost: function () {
+            return buildConfig.url.host
+        },
+        getMagentoUrlBase: function () {
+            return buildConfig.url.base
         },
         getMagentoSecureURL: function () {
             return buildConfig.url.secure
@@ -56,6 +62,9 @@ exports.Config = function (path) {
                 },
                 getProfile: function () {
                     return performance.profile;
+                },
+                getJMeter: function () {
+                    return performance.jmeter;
                 }
             }
         }

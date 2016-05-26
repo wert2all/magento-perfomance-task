@@ -9,7 +9,9 @@
   },
   "url": {
     "default": "http://mage.loc/perf/",
-    "secure": ""
+    "secure": "",
+    "host": "mage.loc",
+    "base": "/perf/"
   },
   "mysql": {
     "host": "localhost",
@@ -19,6 +21,7 @@
   },
   "performance": {
     "version": "1.14",
-    "profile": "small"
+    "profile": "small",
+    "jmeter": "/home/wert2all/Sync/work/soft/testing/jmeter/bin/jmeter"
   }
 }

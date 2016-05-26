@@ -29,11 +29,28 @@ var config = require("./src/Config").Config("./../config.json"),
                     });
                 }
             );
+        },
+        runJMeter: function (config, callback) {
+            build.exec(config.getPerformance().getJMeter())
+                .setArguments([
+                    "-n",
+                    "-t",
+                    config.getMagentoInstanceDirectory() + "/dev/tools/performance_toolkit/benchmark.jmx",
+                    "-Jhost=" + config.getMagentoUrlHost(),
+                    "-Jbase_path=" + config.getMagentoUrlBase(),
+                    "-Jusers=100",
+                    "-Jramp_period=300",
+                    "-Jreport_save_path=" + config.getMagentoInstanceDirectory() + "report/"
+                ])
+                .build(callback)
+                .run();
+
         }
     };
 
 
 Steps.prepareEnvironment(function () {
-    console.log("\n\n\n\n Prepared ");
-});
+    Steps.runJMeter(config, function () {
 
+    });
+});
