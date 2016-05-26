@@ -16,11 +16,10 @@ exports.Performance = function (config) {
                         .setExecOptions({
                             cwd: localDirectory
                         })
-                        .build(function () {
+                        .run(function () {
                             build.mkdir(config.getMagentoInstanceDirectory() + "report/");
                             task.end(callback)
-                        })
-                        .run();
+                        });
                 }
             );
         }

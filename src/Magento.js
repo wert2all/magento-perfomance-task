@@ -3,108 +3,104 @@ exports.Magento = function () {
     var task = require("./Task").Task(),
         build = require("./Build").Build();
 
-    function _getInstallerDirectory(config) {
-        return config.getMagentoInstanceDirectory() + "/dev/tests/functional/config/";
-    }
-
     return {
         install: function (config, callback) {
-            var installDirectory = _getInstallerDirectory(config);
             task.start("Installing Magento into " + config.getMagentoInstanceDirectory());
+            var mysqlConfig = config.getMysql(),
+                installArguments = {
+                    'license_agreement_accepted': 'yes',
+                    'locale': 'en_US',
+                    'timezone': 'America/Los_Angeles',
+                    'default_currency': 'USD',
+                    'db_model': "mysql4",
+                    'db_host': mysqlConfig.getHost(),
+                    'db_name': mysqlConfig.getName(),
+                    'db_user': mysqlConfig.getUser(),
+                    'db_pass': mysqlConfig.getPassword(),
+                    'db_prefix': 'bamboo_',
+                    'use_rewrites': 'yes',
+                    'skip_url_validation': 'yes',
+                    'url': config.getMagentoDefaultURL(),
+                    'secure_base_url': config.getMagentoSecureURL(),
+                    'use_secure': 'yes',
+                    'use_secure_admin': 'yes',
+                    'admin_lastname': 'Admin',
+                    'admin_firstname': 'Admin',
+                    'admin_email': 'admin@example.com',
+                    'admin_username': 'admin',
+                    'admin_password': '123123q',
+                    'encryption_key': 'magicdatabasekey'
+                },
+                consoleArgs = ["-f", config.getMagentoInstanceDirectory() + "install.php", "--"];
 
-            build.exec('php')
-                .setArguments(['-f', installDirectory + "standalone-installer.php"])
+            Object.keys(installArguments).forEach(function (item) {
+                consoleArgs.push("--" + item);
+                consoleArgs.push(installArguments[item]);
+            });
+
+            build.exec("php")
+                .setArguments(consoleArgs)
                 .setExecOptions({
-                    cwd: installDirectory
+                    cwd: config.getMagentoInstanceDirectory()
                 })
-                .build(function () {
-                    task.end(callback)
-                })
-                .run();
+                .run(function () {
+                    build.exec("chmod")
+                        .setArguments([
+                            "0777",
+                            config.getMagentoInstanceDirectory(),
+                            "-R"
+                        ])
+                        .run(function () {
+                            function _getPostInstallTasks() {
+                                var tasks = [],
+                                    i = 0,
+                                    sql = [
+                                        "REPLACE bamboo_core_config_data (scope, scope_id, path, value) VALUES" +
+                                        " ('default', 0, 'admin/security/use_form_key', 0)," +
+                                        " ('default', 0, 'system/csrf/use_form_key', 0);"
+                                    ];
+
+                                [
+                                    'block_html',
+                                    'collections',
+                                    'config',
+                                    'config_api',
+                                    'config_api2',
+                                    'eav',
+                                    'full_page',
+                                    'layout',
+                                    'translate'
+                                ].forEach(function (item) {
+                                    sql.push("INSERT INTO bamboo_core_cache_option (code, value) VALUES ('" + item + "', 1);");
+                                });
+
+                                sql.forEach(function (query) {
+                                    i++;
+                                    tasks.push(function (callback) {
+                                        build.query("use " + mysqlConfig.getName() + "; " + query, mysqlConfig, function () {
+                                            callback(null, "install" + i);
+                                        })
+                                    });
+                                });
+
+                                return tasks;
+                            }
+
+                            require("async").parallel(_getPostInstallTasks(), function () {
+                                task.end(callback)
+                            })
+                        });
+                });
         },
         reCreateDataBase: function (config, callback) {
             var mysqlConfig = config.getMysql();
             task.start("Drop Magento database " + mysqlConfig.getHost());
-            build.exec('mysql')
-                .setArguments([
-                    "-u" + mysqlConfig.getUser(),
-                    "-p" + mysqlConfig.getPassword(),
-                    "-h" + mysqlConfig.getHost(),
-                    "-e drop database if exists " + mysqlConfig.getName() + ";"
-                ])
-                .build(function () {
-                    task.end(callback)
-                })
-                .run();
-        },
-        prepareInstall: function (config, callback) {
-            task.start("Pre-Install Magento");
-            var installDirectory = _getInstallerDirectory(config),
-                _copyInstaller = function (magentoRepository, magentoInstallerDirectory, callback) {
-                    var build = require("./Build").Build();
-                    build.mkdir(magentoInstallerDirectory);
-                    build.copy(
-                        magentoRepository + "/dev/build/core_dev/functional/config/",
-                        magentoInstallerDirectory,
-                        function (err) {
-                            if (err) {
-                                throw err;
-                            }
-                            callback();
-                        }
-                    );
-                },
-                _replaceInstallScript = function (config, magentoInstallerDirectory, callback) {
-                    var installScript = magentoInstallerDirectory + "install.php",
-                        fs = require("fs");
 
-                    fs.readFile(installScript, "utf8", function (err, content) {
-                        if (err) {
-                            throw err;
-                        }
-
-                        ([
-                            {
-                                from: "{{db_model}}",
-                                to: "mysql4"
-                            }, {
-                                from: "{{db_host}}",
-                                to: config.getMysql().getHost()
-                            }, {
-                                from: "{{db_name}}",
-                                to: config.getMysql().getName()
-                            }, {
-                                from: "{{db_user}}",
-                                to: config.getMysql().getUser()
-                            }, {
-                                from: "{{db_password}}",
-                                to: config.getMysql().getPassword()
-                            }, {
-                                from: "{{url}}",
-                                to: config.getMagentoDefaultURL()
-                            }, {
-                                from: "{{secure_url}}",
-                                to: config.getMagentoSecureURL()
-                            }
-                        ]).forEach(function (item) {
-                            content = content.replace(item.from, item.to);
-                        });
-
-                        fs.writeFile(installScript, content, function () {
-                            callback();
-                        })
-                    });
-                };
-
-            _copyInstaller(
-                config.getMagentoRepository(),
-                installDirectory,
-                function () {
-                    _replaceInstallScript(config, installDirectory, function () {
-                        task.end(callback);
-                    })
-                }
-            );
+            build.query("drop database if exists " + mysqlConfig.getName() + ";", mysqlConfig, function () {
+                build.query("CREATE DATABASE " + mysqlConfig.getName(), mysqlConfig, function () {
+                    task.end(callback);
+                });
+            });
         }
     }
 };

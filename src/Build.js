@@ -50,6 +50,19 @@ exports.Build = function () {
                 }
             });
         },
+        query: function (sql, mysqlConfig, callback) {
+            task.start("Exec query on " + mysqlConfig.getHost());
+            this.exec('mysql')
+                .setArguments([
+                    "-u" + mysqlConfig.getUser(),
+                    "-p" + mysqlConfig.getPassword(),
+                    "-h" + mysqlConfig.getHost(),
+                    "-e " + sql
+                ])
+                .run(function () {
+                    task.end(callback)
+                });
+        },
         exec: function (command) {
             var _opt = {
                     onOut: function (data) {
@@ -60,15 +73,11 @@ exports.Build = function () {
                 },
                 args = [];
             return {
-                build: function (callback) {
-                    return {
-                        run: function () {
-                            var exec = require('child_process').spawn(command, args, _opt.execOption);
-                            exec.stdout.on('data', _opt.onOut);
-                            exec.stderr.on('data', _opt.onError);
-                            exec.on('close', callback);
-                        }
-                    }
+                run: function (callback) {
+                    var exec = require('child_process').spawn(command, args, _opt.execOption);
+                    exec.stdout.on('data', _opt.onOut);
+                    exec.stderr.on('data', _opt.onError);
+                    exec.on('close', callback);
                 },
                 setExecOptions: function (options) {
                     _opt.execOption = options;

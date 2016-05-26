@@ -5,7 +5,7 @@
     "performance": "/home/wert2all/Sync/work/code/php/magento-performance-toolkit/"
   },
   "files": {
-    "magento_archive": "/home/wert2all/Downloads/magento-1.14.2.4.tar.gz"
+    "magento_archive": "/home/wert2all/Downloads/magento-1.14.3.tar.gz"
   },
   "url": {
     "default": "http://mage.loc/perf/",

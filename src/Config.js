@@ -20,7 +20,7 @@ exports.Config = function (path) {
             return buildConfig.files.magento_archive
         },
         getMagentoDefaultURL: function () {
-            return "http://" + this.getMagentoUrlBase() + this.getMagentoUrlBase();
+            return "http://" + this.getMagentoUrlHost() + this.getMagentoUrlBase();
         },
         getMagentoUrlHost: function () {
             return buildConfig.url.host
